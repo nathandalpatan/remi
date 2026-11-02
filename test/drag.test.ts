@@ -4,18 +4,30 @@ import { dropTile, packReceipts } from '../src/index.js';
 const slip = (id: string, extra = {}) => ({ id, widthPx: 600, heightPx: 1200, ...extra }); // 80 x 165 mm tile
 
 describe('dropTile', () => {
-  it('returns the placement for a free spot', () => {
+  it('returns placements for every receipt after a drop on a free spot', () => {
     const layout = packReceipts([slip('a'), slip('b')]);
     expect(dropTile(layout, 'a', 1, { pageIndex: 0, xMm: 50, yMm: 100 })).toEqual({
       ok: true,
-      placement: { part: 1, pageIndex: 0, xMm: 50, yMm: 100 },
+      placements: { a: [{ part: 1, pageIndex: 0, xMm: 50, yMm: 100 }], b: [] },
     });
   });
 
   it('pulls a drop back inside the margins', () => {
     const layout = packReceipts([slip('a')]);
     const result = dropTile(layout, 'a', 1, { pageIndex: 0, xMm: 500, yMm: -20 });
-    expect(result).toEqual({ ok: true, placement: { part: 1, pageIndex: 0, xMm: 120, yMm: 10 } });
+    expect(result).toEqual({ ok: true, placements: { a: [{ part: 1, pageIndex: 0, xMm: 120, yMm: 10 }] } });
+  });
+
+  it('lands next to a pin whose saved page was renumbered', () => {
+    // A was saved on page index 2; page index 1 emptied out, so A shows on index 1.
+    const items = [slip('C'), slip('A', { placements: [{ part: 1, pageIndex: 2, xMm: 10, yMm: 10 }] })];
+    const result = dropTile(packReceipts(items), 'C', 1, { pageIndex: 1, xMm: 110, yMm: 10 });
+    if (!result.ok) throw new Error('drop refused');
+    const repacked = packReceipts(items.map((item) => ({ ...item, placements: result.placements[item.id]! })));
+    expect(repacked.tiles.map((t) => [t.receiptId, t.pageIndex])).toEqual([
+      ['C', 0],
+      ['A', 0],
+    ]);
   });
 
   it('refuses to drop onto a pinned tile but ignores unpinned ones', () => {
@@ -33,7 +45,7 @@ describe('dropTile', () => {
     const layout = packReceipts([slip('a'), slip('b')]);
     const result = dropTile(layout, 'b', 1, { pageIndex: 1, xMm: 60, yMm: 40 });
     if (!result.ok) throw new Error('drop refused');
-    const repacked = packReceipts([slip('a'), slip('b', { placements: [result.placement] })]);
+    const repacked = packReceipts([slip('a'), slip('b', { placements: result.placements['b']! })]);
     expect(repacked.tiles.find((t) => t.receiptId === 'b')).toMatchObject({ pageIndex: 1, xMm: 60, yMm: 40, pinned: true });
   });
 
