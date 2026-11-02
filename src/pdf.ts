@@ -6,19 +6,15 @@ import {
   popGraphicsState,
   pushGraphicsState,
   rectangle,
-  rgb,
   type PDFFont,
   type PDFImage,
   type PDFPage,
 } from 'pdf-lib';
+import { drawCover } from './cover.js';
 import { A4_PORTRAIT, packReceipts, type PageSpec, type Tile } from './layout.js';
-import { formatCents } from './money.js';
-import { summarizeClaim, type ClaimSummary, type ReceiptIssue } from './totals.js';
+import { GREY, LIGHT_GREY, PT_PER_MM, fitText, toWinAnsi } from './pdf-text.js';
+import { summarizeClaim, type ReceiptIssue } from './totals.js';
 import type { Batch, Receipt } from './types.js';
-
-const PT_PER_MM = 72 / 25.4;
-const GREY = rgb(0.45, 0.45, 0.45);
-const LIGHT_GREY = rgb(0.8, 0.8, 0.8);
 
 export interface RenderOptions {
   batch: Batch;
@@ -82,115 +78,6 @@ export async function renderClaimPdf(options: RenderOptions): Promise<Uint8Array
   return doc.save();
 }
 
-interface Fonts {
-  regular: PDFFont;
-  bold: PDFFont;
-}
-
-function drawCover(
-  doc: PDFDocument,
-  spec: PageSpec,
-  fonts: Fonts,
-  batch: Batch,
-  summary: ClaimSummary,
-): void {
-  const pageWidth = spec.widthMm * PT_PER_MM;
-  const pageHeight = spec.heightMm * PT_PER_MM;
-  const margin = Math.max(spec.marginMm, 15) * PT_PER_MM;
-  const usable = pageWidth - 2 * margin;
-  const rowHeight = 16;
-  const size = 9;
-  const cellPadding = 4;
-  const home = summary.homeCurrency;
-
-  // Column widths as fractions of the usable width; amounts are right-aligned.
-  const columns = [
-    { title: '#', share: 0.05, align: 'left' },
-    { title: 'Date', share: 0.13, align: 'left' },
-    { title: 'Merchant', share: 0.3, align: 'left' },
-    { title: 'Category', share: 0.2, align: 'left' },
-    { title: 'Amount', share: 0.17, align: 'right' },
-    { title: home, share: 0.15, align: 'right' },
-  ] as const;
-
-  let page = doc.addPage([pageWidth, pageHeight]);
-  let y = pageHeight - margin;
-
-  const text = (s: string, x: number, font: PDFFont, fontSize: number, color = rgb(0, 0, 0)) =>
-    page.drawText(toWinAnsi(s), { x, y, font, size: fontSize, color });
-
-  text(batch.name, margin, fonts.bold, 18);
-  y -= 22;
-  text(
-    `Created ${batch.createdAt.slice(0, 10)} · ${summary.lines.length} receipt(s) · totals in ${home}`,
-    margin,
-    fonts.regular,
-    10,
-    GREY,
-  );
-  y -= 28;
-
-  const drawRow = (cells: string[], font: PDFFont) => {
-    let x = margin;
-    columns.forEach((column, i) => {
-      const width = column.share * usable;
-      const cell = fitText(font, size, toWinAnsi(cells[i] ?? ''), width - cellPadding);
-      const cellX =
-        column.align === 'right' ? x + width - font.widthOfTextAtSize(cell, size) : x;
-      page.drawText(cell, { x: cellX, y, font, size });
-      x += width;
-    });
-    y -= rowHeight;
-  };
-  const drawHeader = () => {
-    drawRow(columns.map((c) => c.title), fonts.bold);
-    page.drawLine({
-      start: { x: margin, y: y + rowHeight - 4 },
-      end: { x: margin + usable, y: y + rowHeight - 4 },
-      thickness: 0.5,
-      color: LIGHT_GREY,
-    });
-  };
-
-  drawHeader();
-  // Leave room at the bottom for the totals block.
-  const footerSpace = 3 * rowHeight;
-  for (const { number, receipt, homeAmountCents } of summary.lines) {
-    if (y - footerSpace < margin) {
-      page = doc.addPage([pageWidth, pageHeight]);
-      y = pageHeight - margin;
-      drawHeader();
-    }
-    const amount = formatCents(receipt.amountCents!);
-    drawRow(
-      [
-        String(number),
-        receipt.date ?? '',
-        receipt.merchant ?? '',
-        receipt.category ?? '',
-        receipt.currency === home ? amount : `${amount} ${receipt.currency}`,
-        formatCents(homeAmountCents!),
-      ],
-      fonts.regular,
-    );
-  }
-
-  y -= 6;
-  page.drawLine({
-    start: { x: margin, y: y + rowHeight },
-    end: { x: margin + usable, y: y + rowHeight },
-    thickness: 1,
-  });
-  const drawTotalLine = (label: string, cents: number, font: PDFFont) => {
-    const value = `${formatCents(cents)} ${home}`;
-    page.drawText(label, { x: margin, y, font, size: 11 });
-    page.drawText(value, { x: margin + usable - font.widthOfTextAtSize(value, 11), y, font, size: 11 });
-    y -= rowHeight + 2;
-  };
-  drawTotalLine('Total', summary.totalCents, fonts.bold);
-  drawTotalLine('GST included', summary.gstCents, fonts.regular);
-}
-
 function drawTile(
   page: PDFPage,
   spec: PageSpec,
@@ -241,24 +128,4 @@ async function embedImage(doc: PDFDocument, bytes: Uint8Array): Promise<PDFImage
   }
   if (bytes[0] === 0xff && bytes[1] === 0xd8) return doc.embedJpg(bytes);
   throw new Error('Unsupported image format: expected PNG or JPEG');
-}
-
-/**
- * The built-in PDF fonts only cover WinAnsi (Latin-1 plus a few symbols) and throw on
- * anything else. Strip accents ("Kōhanga" -> "Kohanga") and replace what's left, so a
- * merchant name can never break the export. Embed a TTF instead if you need full Unicode.
- */
-function toWinAnsi(text: string): string {
-  return text
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\x20-\x7e\xa0-\xff€…–—‘’“”•·]/g, '?');
-}
-
-function fitText(font: PDFFont, size: number, text: string, maxWidth: number): string {
-  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
-  let end = text.length;
-  while (end > 0 && font.widthOfTextAtSize(`${text.slice(0, end)}…`, size) > maxWidth) end--;
-  return `${text.slice(0, end).trimEnd()}…`;
 }

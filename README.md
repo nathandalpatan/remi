@@ -18,7 +18,8 @@ A mobile app that lets you photograph receipts, automatically packs many of them
 │ totals.ts      claim total in home currency, GST, blocking issues               │
 │ layout.ts      pack mixed-width photos, keep pinned ones, split long receipts   │
 │ drag.ts        validate a dragged receipt's drop → placement to save            │
-│ pdf.ts         cover sheet (numbered rows + total) + packed receipt pages       │
+│ pdf.ts         claim PDF: cover sheet + packed receipt pages                    │
+│ cover.ts       cover sheet: numbered rows + total                               │
 │ csv.ts         one row per receipt for finance-system import                    │
 └─────────────────────────────────────────────────────────────────────────────────┘
        ▼
