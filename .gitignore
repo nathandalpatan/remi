@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+# Claude Code
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
+
+# Research
+research_notes/
+reports/
