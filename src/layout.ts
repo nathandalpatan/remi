@@ -1,31 +1,31 @@
 /**
- * Packs receipt photos onto as few pages as possible without shrinking them below a
- * legible width.
+ * Packs receipt photos of different widths onto as few pages as possible.
  *
- * Receipts are tall, narrow strips, so the page is divided into equal-width columns
- * and every receipt is printed at the column width. That keeps text at a consistent,
- * readable size and turns the 2D problem into 1D bin packing: each column is a bin
- * of fixed height, and each receipt is an item whose height follows from its aspect
- * ratio. A receipt taller than a column is cut into equal parts.
+ * Each receipt prints at its own width: one the user chose, or a guess from the
+ * photo's shape (a tall strip is a till slip, anything else is page-shaped). Its
+ * height follows from its aspect ratio; a receipt taller than a page is cut into
+ * equal parts instead of being shrunk.
  *
- * Bins are filled with first-fit decreasing: place the tallest pieces first, each in
- * the first column with room. It is simple, fast, and uses at most 11/9 of the
- * optimal number of columns (plus a small constant).
+ * Tiles the user has dragged into place are placed first and stay put. The rest are
+ * packed largest first, each into the top-most, then left-most free spot on the first
+ * page with room (see free-space.ts).
  */
+import { collides, findFreeSpot, isInside, type Bounds, type Rect } from './free-space.js';
 
 const MM_PER_INCH = 25.4;
-// Parts of a split receipt are sized to exactly fill a column; float error must not
-// push them into the next one.
-const EPSILON_MM = 1e-6;
+/** Photos at least this many times taller than wide are treated as till-roll slips. */
+const TILL_SLIP_MIN_ASPECT = 1.6;
+/** Common till roll width; 57 mm rolls print at the minimum width instead. */
+const TILL_SLIP_WIDTH_MM = 80;
 
 export interface PageSpec {
   widthMm: number;
   heightMm: number;
   marginMm: number;
-  /** Space between columns and between receipts in a column. */
+  /** Space kept between receipts. */
   gapMm: number;
   /** Narrowest a receipt may be printed. ~60 mm keeps till-roll text readable. */
-  minColumnWidthMm: number;
+  minReceiptWidthMm: number;
   /** Space above each receipt for its number, which maps it to the cover page row. */
   labelHeightMm: number;
 }
@@ -35,18 +35,29 @@ export const A4_PORTRAIT: PageSpec = {
   heightMm: 297,
   marginMm: 10,
   gapMm: 5,
-  minColumnWidthMm: 60,
+  minReceiptWidthMm: 60,
   labelHeightMm: 5,
 };
+
+/** Where the user dragged one tile; `xMm`/`yMm` are its top-left corner, label included. */
+export interface TilePlacement {
+  part: number;
+  pageIndex: number;
+  xMm: number;
+  yMm: number;
+}
 
 export interface LayoutItem {
   id: string;
   widthPx: number;
   heightPx: number;
+  /** Print width chosen by the user; absent or null means guess from the shape. */
+  widthMm?: number | null;
+  placements?: TilePlacement[];
 }
 
 /** One placed piece of a receipt. Coordinates are in mm from the page's top-left. */
-export interface Tile {
+export interface Tile extends Rect {
   receiptId: string;
   /** 1-based position in the input; printed on the page and on the cover sheet. */
   number: number;
@@ -54,88 +65,99 @@ export interface Tile {
   part: number;
   partCount: number;
   pageIndex: number;
-  xMm: number;
-  yMm: number;
-  widthMm: number;
-  /** Includes the label. */
-  heightMm: number;
+  /** `heightMm` includes the label; this is the photo slice alone. */
   imageHeightMm: number;
   /** Vertical slice of the source photo shown in this tile, as fractions 0..1 from the top. */
   sourceTop: number;
   sourceBottom: number;
   /** Below ~150 the print will look soft; worth warning the user at capture time. */
   effectiveDpi: number;
+  /** True when the tile sits where the user dragged it. */
+  pinned: boolean;
 }
 
 export interface Layout {
   spec: PageSpec;
-  columnsPerPage: number;
-  columnWidthMm: number;
   pageCount: number;
   tiles: Tile[];
 }
 
-type Piece = Omit<Tile, 'pageIndex' | 'xMm' | 'yMm' | 'widthMm'>;
+type Piece = Omit<Tile, 'pageIndex' | 'xMm' | 'yMm' | 'pinned'>;
 
-interface Column {
-  usedMm: number;
-  pieces: Piece[];
+export function printableBounds(spec: PageSpec): Bounds {
+  return {
+    left: spec.marginMm,
+    top: spec.marginMm,
+    right: spec.widthMm - spec.marginMm,
+    bottom: spec.heightMm - spec.marginMm,
+  };
+}
+
+/** The width a receipt prints at before the user resizes it. */
+export function guessPrintWidthMm(widthPx: number, heightPx: number, spec: PageSpec = A4_PORTRAIT): number {
+  const usableWidth = spec.widthMm - 2 * spec.marginMm;
+  const guess = heightPx / widthPx >= TILL_SLIP_MIN_ASPECT ? TILL_SLIP_WIDTH_MM : usableWidth;
+  return Math.min(Math.max(guess, spec.minReceiptWidthMm), usableWidth);
 }
 
 export function packReceipts(items: LayoutItem[], spec: PageSpec = A4_PORTRAIT): Layout {
-  const usableWidth = spec.widthMm - 2 * spec.marginMm;
-  const usableHeight = spec.heightMm - 2 * spec.marginMm;
-  const maxImageHeight = usableHeight - spec.labelHeightMm;
-  const columnsPerPage = Math.floor(
-    (usableWidth + spec.gapMm) / (spec.minColumnWidthMm + spec.gapMm),
-  );
-  if (columnsPerPage < 1 || maxImageHeight <= 0) {
-    throw new RangeError('Page is too small for the minimum column width');
+  const bounds = printableBounds(spec);
+  const usableWidth = bounds.right - bounds.left;
+  const maxImageHeight = bounds.bottom - bounds.top - spec.labelHeightMm;
+  if (spec.minReceiptWidthMm > usableWidth || maxImageHeight <= 0) {
+    throw new RangeError('Page is too small for the minimum receipt width');
   }
-  // Widen columns to use the leftover width: bigger print, same number of columns.
-  const columnWidthMm = (usableWidth - spec.gapMm * (columnsPerPage - 1)) / columnsPerPage;
 
-  const pieces = items.flatMap((item, index) =>
-    splitIntoPieces(item, index + 1, columnWidthMm, maxImageHeight, spec.labelHeightMm),
-  );
+  const pages: Tile[][] = [];
+  const place = (piece: Piece, pageIndex: number, xMm: number, yMm: number, pinned: boolean) => {
+    (pages[pageIndex] ??= []).push({ ...piece, pageIndex, xMm, yMm, pinned });
+  };
 
-  const byHeightDesc = [...pieces].sort(
-    (a, b) => b.heightMm - a.heightMm || a.number - b.number || a.part - b.part,
-  );
-  const columns: Column[] = [];
-  for (const piece of byHeightDesc) {
-    let column = columns.find(
-      (c) => c.usedMm + spec.gapMm + piece.heightMm <= usableHeight + EPSILON_MM,
+  const unplaced: Piece[] = [];
+  items.forEach((item, index) => {
+    const widthMm = Math.min(
+      Math.max(item.widthMm ?? guessPrintWidthMm(item.widthPx, item.heightPx, spec), spec.minReceiptWidthMm),
+      usableWidth,
     );
-    if (!column) {
-      // Starting at -gap means the first piece in a column adds no gap above it.
-      column = { usedMm: -spec.gapMm, pieces: [] };
-      columns.push(column);
+    for (const piece of splitIntoPieces(item, index + 1, widthMm, maxImageHeight, spec.labelHeightMm)) {
+      const pin = item.placements?.find((p) => p.part === piece.part);
+      if (pin && canPin(piece, pin, pages, bounds, spec.gapMm)) {
+        place(piece, pin.pageIndex, pin.xMm, pin.yMm, true);
+      } else {
+        unplaced.push(piece);
+      }
     }
-    column.usedMm += spec.gapMm + piece.heightMm;
-    column.pieces.push(piece);
-  }
-
-  const tiles = columns.flatMap((column, columnIndex) => {
-    // Within a column, show receipts in number order so the page reads naturally.
-    column.pieces.sort((a, b) => a.number - b.number || a.part - b.part);
-    const xMm = spec.marginMm + (columnIndex % columnsPerPage) * (columnWidthMm + spec.gapMm);
-    const pageIndex = Math.floor(columnIndex / columnsPerPage);
-    let yMm = spec.marginMm;
-    return column.pieces.map((piece): Tile => {
-      const tile = { ...piece, pageIndex, xMm, yMm, widthMm: columnWidthMm };
-      yMm += piece.heightMm + spec.gapMm;
-      return tile;
-    });
   });
 
+  const largestFirst = unplaced.sort(
+    (a, b) => b.heightMm * b.widthMm - a.heightMm * a.widthMm || a.number - b.number || a.part - b.part,
+  );
+  for (const piece of largestFirst) {
+    let pageIndex = 0;
+    for (; ; pageIndex++) {
+      const spot = findFreeSpot(bounds, pages[pageIndex] ?? [], piece.widthMm, piece.heightMm, spec.gapMm);
+      if (spot) {
+        place(piece, pageIndex, spot.xMm, spot.yMm, false);
+        break;
+      }
+    }
+  }
+
+  // Pins can leave pages empty (e.g. earlier receipts deleted); drop them so the PDF has no blank pages.
+  const used = pages.filter((page) => page.length > 0);
   return {
     spec,
-    columnsPerPage,
-    columnWidthMm,
-    pageCount: Math.ceil(columns.length / columnsPerPage),
-    tiles,
+    pageCount: used.length,
+    tiles: used.flatMap((page, pageIndex) =>
+      page.map((tile) => ({ ...tile, pageIndex })).sort((a, b) => a.number - b.number || a.part - b.part),
+    ),
   };
+}
+
+function canPin(piece: Piece, pin: TilePlacement, pages: Tile[][], bounds: Bounds, gapMm: number): boolean {
+  if (!Number.isInteger(pin.pageIndex) || pin.pageIndex < 0) return false;
+  const rect = { xMm: pin.xMm, yMm: pin.yMm, widthMm: piece.widthMm, heightMm: piece.heightMm };
+  return isInside(rect, bounds) && !(pages[pin.pageIndex] ?? []).some((t) => collides(rect, t, gapMm));
 }
 
 function splitIntoPieces(
@@ -150,7 +172,7 @@ function splitIntoPieces(
   }
   const imageHeight = (widthMm * item.heightPx) / item.widthPx;
   const partCount = Math.ceil(imageHeight / maxImageHeight);
-  // Equal parts look better than one full column followed by a stub.
+  // Equal parts look better than one full page followed by a stub.
   const partHeight = imageHeight / partCount;
   const effectiveDpi = item.widthPx / (widthMm / MM_PER_INCH);
   return Array.from({ length: partCount }, (_, i) => ({
@@ -158,6 +180,7 @@ function splitIntoPieces(
     number,
     part: i + 1,
     partCount,
+    widthMm,
     heightMm: labelHeight + partHeight,
     imageHeightMm: partHeight,
     sourceTop: i / partCount,

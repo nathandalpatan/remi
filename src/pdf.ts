@@ -48,7 +48,13 @@ export async function renderClaimPdf(options: RenderOptions): Promise<Uint8Array
   if (summary.issues.length > 0) throw new ExportBlockedError(summary.issues);
 
   const layout = packReceipts(
-    receipts.map((r) => ({ id: r.id, widthPx: r.image.widthPx, heightPx: r.image.heightPx })),
+    receipts.map((r) => ({
+      id: r.id,
+      widthPx: r.image.widthPx,
+      heightPx: r.image.heightPx,
+      widthMm: r.printWidthMm ?? null,
+      placements: r.placements ?? [],
+    })),
     spec,
   );
 

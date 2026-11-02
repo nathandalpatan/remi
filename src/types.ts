@@ -1,3 +1,5 @@
+import type { TilePlacement } from './layout.js';
+
 /** ISO 4217 currency code, e.g. "NZD". */
 export type CurrencyCode = string;
 
@@ -43,4 +45,8 @@ export interface Receipt {
   notes: string;
   /** True once the user has checked the extracted fields against the photo. */
   confirmed: boolean;
+  /** Print width the user chose; absent or null means guess from the photo's shape. */
+  printWidthMm?: number | null;
+  /** Tiles the user dragged into place; the rest are packed automatically. */
+  placements?: TilePlacement[];
 }
