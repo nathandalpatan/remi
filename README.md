@@ -4,7 +4,7 @@ A mobile app that lets you photograph receipts, automatically packs many of them
 ## Architecture
 
 ```
-┌──────────────── Mobile app (React Native, not in this repo yet) ────────────────┐
+┌──────────────── Mobile app (apps/mobile, Expo + React Native) ──────────────────┐
 │ Capture            Review                     Export                            │
 │ ML Kit Document    edit + confirm fields,     pick batch → share PDF + CSV      │
 │ Scanner / VisionKit duplicate warnings                                          │
@@ -12,7 +12,7 @@ A mobile app that lets you photograph receipts, automatically packs many of them
 │      │ photo + on-device OCR text                                               │
 └──────┼──────────────────────────────────────────────────────────────────────────┘
        ▼
-┌──────────────── remi-core (this package, pure TypeScript, no UI) ───────────────┐
+┌──────────────── @remi/core (packages/core, pure TypeScript, no UI) ─────────────┐
 │ extract.ts     OCR text → suggested total / GST / date / merchant (+confidence) │
 │ duplicates.ts  same merchant + date + amount + currency → warn                  │
 │ totals.ts      claim total in home currency, GST, blocking issues               │
@@ -36,7 +36,7 @@ Key decisions:
 ## Usage
 
 ```ts
-import { extractFields, findDuplicates, renderClaimPdf, toCsv } from 'remi-core';
+import { extractFields, findDuplicates, renderClaimPdf, toCsv } from '@remi/core';
 
 const suggested = extractFields(ocrText); // show as editable fields
 const duplicates = findDuplicates([...existingReceipts, ...newReceipts]);
@@ -48,9 +48,18 @@ Images must be upright PNG or JPEG with their real pixel size in `receipt.image`
 
 ## Development
 
+A pnpm workspace with two packages: `packages/core` (the library) and `apps/mobile` (the Expo app, which imports the built library from `packages/core/dist`).
+
 ```sh
-pnpm install
+pnpm install       # also builds packages/core
 pnpm test          # vitest
-pnpm typecheck
-pnpm build         # emits dist/
+pnpm typecheck     # core and app
+pnpm build         # rebuild packages/core/dist after changing core
+```
+
+The app currently takes or picks a photo per receipt, takes a typed amount, and exports and shares the claim PDF. Run it on a phone with Expo Go:
+
+```sh
+cd apps/mobile
+pnpm start         # scan the QR code with Expo Go
 ```
