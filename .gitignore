@@ -6,7 +6,11 @@ CLAUDE.md
 CLAUDE.local.md
 .claude/
 .mcp.json
+AGENTS.md
 
 # Research
 research_notes/
 reports/
+
+# Real receipt photos: personal data, never commit (public repo)
+receipts/
