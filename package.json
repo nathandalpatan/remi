@@ -1,27 +1,10 @@
 {
-  "name": "remi-core",
-  "version": "0.1.0",
-  "description": "UI-free core for remi: receipt layout packing, field extraction, totals and PDF/CSV export.",
+  "name": "remi",
   "private": true,
-  "license": "MIT",
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "pdf-lib": "^1.17.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.20.5",
-    "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test"
   },
   "packageManager": "pnpm@11.22.0"
 }

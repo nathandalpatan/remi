@@ -1,0 +1,6 @@
+packages:
+  - packages/*
+  - apps/*
+
+# React Native's bundler (Metro) expects a flat node_modules like npm's.
+nodeLinker: hoisted
