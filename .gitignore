@@ -1,5 +1,6 @@
 node_modules/
 dist/
+apps/mobile/android/
 
 # Claude Code
 CLAUDE.md

@@ -1,0 +1,7 @@
+{
+  "name": "remi-scan",
+  "version": "1.0.0",
+  "description": "Local receipt image processing",
+  "license": "MIT",
+  "private": true
+}

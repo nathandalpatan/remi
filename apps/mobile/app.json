@@ -3,13 +3,19 @@
     "name": "remi",
     "slug": "remi",
     "version": "1.0.0",
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Allow Remi to scan receipts.", "recordAudioAndroid": false }],
+      "expo-dev-client"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.remi.receipts"
     },
     "android": {
+      "package": "com.remi.receipts",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +26,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3a799732-8fe1-4eed-8db0-20f0a0f75e1d"
+      }
+    },
+    "owner": "tekkyo"
   }
 }

@@ -2,5 +2,8 @@ packages:
   - packages/*
   - apps/*
 
+minimumReleaseAgeExclude:
+  - expo-sqlite@58.0.17
+
 # React Native's bundler (Metro) expects a flat node_modules like npm's.
 nodeLinker: hoisted
