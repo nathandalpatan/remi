@@ -42,6 +42,14 @@ export function makeReceipt(overrides: Partial<Receipt> = {}): Receipt {
     fx: null,
     notes: '',
     confirmed: true,
+    imageRevision: 0,
+    processingStatus: 'ready',
+    financialVerification: {
+      amount: { status: 'verified', evidence: { source: 'user', imageRevision: 0 } },
+      currency: { status: 'verified', evidence: { source: 'user', imageRevision: 0 } },
+    },
+    integrity: { state: 'ready', issues: [], imageRevision: 0, assessmentRevision: 1 },
+    claimIncluded: true,
     ...overrides,
   };
 }

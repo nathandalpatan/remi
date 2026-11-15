@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractFields } from '../src/index.js';
+import { extractFieldCandidates, extractFields } from '../src/index.js';
 
 const NZ_RECEIPT = `
 COUNTDOWN METRO
@@ -45,7 +45,41 @@ describe('extractFields', () => {
   });
 
   it('returns nulls when nothing is found', () => {
-    expect(extractFields('')).toEqual({ totalCents: null, gstCents: null, date: null, merchant: null });
+    expect(extractFields('')).toEqual({ totalCents: null, gstCents: null, date: null, merchant: null, currency: null });
+  });
+
+  it('does not infer currency from a dollar symbol alone', () => {
+    expect(extractFields('TOTAL $35.00').currency).toBeNull();
+    expect(extractFields('TOTAL NZD 35.00').currency).toEqual({ value: 'NZD', confidence: 'high' });
+  });
+
+  it('requires currency context rather than treating receipt words as currency', () => {
+    expect(extractFields('QTY 2\nWWW SHOP\nTRY OUR RANGE\nTOTAL $35.00').currency).toBeNull();
+    expect(extractFields('PAID 35.00 USD').currency).toEqual({ value: 'USD', confidence: 'high' });
+    expect(extractFields('Currency: aud\nTOTAL $35.00').currency).toEqual({ value: 'AUD', confidence: 'high' });
+  });
+
+  it('retains evidence line indexes for review', () => {
+    const candidates = extractFieldCandidates('SHOP\nTOTAL NZD 35.00', 2);
+    expect(candidates.find((item) => item.field === 'amount')).toMatchObject({
+      value: 3500, evidence: { imageRevision: 2, lineIndexes: [1] },
+    });
+  });
+
+  it('suggests the merchant named in a shopping footer when the header is unclear', () => {
+    const text = 'Product\nQTY\nTOTAL $18.40\nThanks for shopping at Northside Hardware.';
+    expect(extractFields(text).merchant).toEqual({ value: 'Northside Hardware', confidence: 'medium' });
+    expect(extractFieldCandidates(text, 3).find((candidate) => candidate.field === 'merchant'))
+      .toMatchObject({ evidence: { imageRevision: 3, lineIndexes: [3] } });
+  });
+
+  it('keeps a repeated merchant ahead of a shopping footer', () => {
+    const text = 'Bluebird Market\nTAX INVOICE\nBluebird Market\nThanks for shopping at Rewards Club';
+    expect(extractFields(text).merchant).toEqual({ value: 'Bluebird Market', confidence: 'medium' });
+  });
+
+  it('does not treat an unnamed shopping footer as a merchant', () => {
+    expect(extractFields('TAX INVOICE\nThanks for shopping at 123').merchant).toBeNull();
   });
 
   describe('dates', () => {

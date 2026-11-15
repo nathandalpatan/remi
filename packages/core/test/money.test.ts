@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   centsToDecimal,
   convertCents,
+  currencyMinorDigits,
   formatCents,
+  formatMinorUnits,
   gstFromInclusive,
   parseAmountToCents,
+  parseAmountToMinorUnits,
 } from '../src/index.js';
 
 describe('parseAmountToCents', () => {
@@ -33,6 +36,39 @@ describe('formatting', () => {
   });
 
   it('rejects non-integer cents', () => expect(() => centsToDecimal(1.5)).toThrow(RangeError));
+});
+
+describe('currency minor units', () => {
+  it('rejects OCR words even when supportedValuesOf is unavailable', () => {
+    const original = Object.getOwnPropertyDescriptor(Intl, 'supportedValuesOf');
+    Object.defineProperty(Intl, 'supportedValuesOf', { configurable: true, value: undefined });
+    try {
+      for (const word of ['MAN', 'MAH', 'QTY', 'WWW']) {
+        expect(() => currencyMinorDigits(word)).toThrow(RangeError);
+      }
+      expect(currencyMinorDigits('NZD')).toBe(2);
+    } finally {
+      if (original) Object.defineProperty(Intl, 'supportedValuesOf', original);
+      else Reflect.deleteProperty(Intl, 'supportedValuesOf');
+    }
+  });
+
+  it('uses ISO precision for two-, zero-, and three-decimal currencies', () => {
+    expect(currencyMinorDigits('NZD')).toBe(2);
+    expect(currencyMinorDigits('JPY')).toBe(0);
+    expect(currencyMinorDigits('KWD')).toBe(3);
+    expect(parseAmountToMinorUnits('35.00', 'NZD')).toBe(3500);
+    expect(parseAmountToMinorUnits('1,234', 'JPY')).toBe(1234);
+    expect(parseAmountToMinorUnits('12.345', 'KWD')).toBe(12345);
+    expect(formatMinorUnits(12345, 'KWD')).toBe('12.345');
+    expect(formatMinorUnits(1234, 'JPY')).toBe('1,234');
+  });
+
+  it('rejects amounts with too many decimals or unsafe integer precision', () => {
+    expect(parseAmountToMinorUnits('1.25', 'JPY')).toBeNull();
+    expect(parseAmountToMinorUnits('1.2345', 'KWD')).toBeNull();
+    expect(parseAmountToMinorUnits('999999999999999999', 'NZD')).toBeNull();
+  });
 });
 
 describe('convertCents', () => {

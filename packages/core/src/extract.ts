@@ -4,9 +4,10 @@
  * must show them as editable fields for the user to confirm.
  */
 
-import { parseAmountToCents } from './money.js';
+import { currencyMinorDigits, parseAmountToCents } from './money.js';
+import type { FinancialCandidate, FinancialField } from './types.js';
 
-export type Confidence = 'high' | 'low';
+export type Confidence = 'high' | 'medium' | 'low';
 
 export interface Extracted<T> {
   value: T;
@@ -19,6 +20,7 @@ export interface ExtractedFields {
   /** YYYY-MM-DD */
   date: Extracted<string> | null;
   merchant: Extracted<string> | null;
+  currency: Extracted<string> | null;
 }
 
 export interface ExtractOptions {
@@ -63,7 +65,30 @@ export function extractFields(ocrText: string, options: ExtractOptions = {}): Ex
     gstCents: extractGst(lines, totalCents?.value ?? null),
     date: extractDate(lines, options.dayFirst ?? true),
     merchant: extractMerchant(lines),
+    currency: extractCurrency(lines),
   };
+}
+
+/** Field suggestions retain the OCR line that supports each value. */
+export function extractFieldCandidates(ocrText: string, imageRevision: number): FinancialCandidate[] {
+  const lines = ocrText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const extracted = extractFields(ocrText);
+  const values: [FinancialField, Extracted<string | number> | null][] = [
+    ['amount', extracted.totalCents], ['gst', extracted.gstCents], ['date', extracted.date],
+    ['merchant', extracted.merchant], ['currency', extracted.currency],
+  ];
+  return values.flatMap(([field, candidate]) => {
+    if (!candidate) return [];
+    const lineIndex = lines.findIndex((line) => field === 'amount'
+      ? !NOT_TOTAL_RE.test(line) && TOTAL_KEYWORDS.some(([label]) => label.test(line)) &&
+        amountsIn(line).includes(candidate.value as number)
+      : field === 'date' ? extractDate([line], true)?.value === candidate.value
+      : field === 'gst' ? GST_RE.test(line) && amountsIn(line).includes(candidate.value as number)
+      : line.toLowerCase().includes(String(candidate.value).toLowerCase()));
+    return [{ field, value: candidate.value, confidence: candidate.confidence,
+      evidence: { source: 'ocr' as const, imageRevision,
+        ...(lineIndex >= 0 ? { lineIndexes: [lineIndex] } : {}) } }];
+  });
 }
 
 function amountsIn(line: string): number[] {
@@ -133,12 +158,46 @@ function extractDate(lines: string[], dayFirst: boolean): Extracted<string> | nu
 }
 
 function extractMerchant(lines: string[]): Extracted<string> | null {
-  // The store name is normally printed at the top, but OCR can't tell a logo line
-  // from an address, so this is always a low-confidence suggestion.
-  const line = lines
-    .slice(0, 5)
-    .find((l) => (l.match(/\p{L}/gu)?.length ?? 0) >= 2 && !MERCHANT_NOISE_RE.test(l));
-  return line ? { value: line, confidence: 'low' } : null;
+  const candidates = lines.filter((line, index) => (index < 5 || index >= lines.length - 5) &&
+      (line.match(/\p{L}/gu)?.length ?? 0) >= 2 && !amountsIn(line).length &&
+      !/\d{1,2}[A-Z]{3}\d{2}/i.test(line) && !MERCHANT_NOISE_RE.test(line) &&
+      !/\b(payment|sale|purchase|card|terminal|eftpos|visa|mastercard)\b/i.test(line));
+  const repeated = candidates.find((candidate) => candidates.filter((other) =>
+    other.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '') ===
+    candidate.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')).length > 1);
+  if (repeated) return { value: repeated, confidence: 'medium' };
+  const shoppingAt = lines.map((line) => /\bthanks?\s+for\s+shopping\s+at\s+(.+)/i.exec(line)?.[1]
+    ?.replace(/[.!?]+$/, '').trim()).find((name) => name && (name.match(/\p{L}/gu)?.length ?? 0) >= 2);
+  return shoppingAt ? { value: shoppingAt, confidence: 'medium' }
+    : candidates[0] ? { value: candidates[0], confidence: 'low' } : null;
+}
+
+function extractCurrency(lines: string[]): Extracted<string> | null {
+  for (const line of lines) {
+    const labelled = /\b(?:currency|curr)\s*[:=]?\s*([A-Z]{3})\b/i.exec(line);
+    if (labelled) {
+      const code = labelled[1]!.toUpperCase();
+      try { currencyMinorDigits(code); return { value: code, confidence: 'high' }; }
+      catch { /* OCR may have read a non-currency word. */ }
+    }
+    const amounts = [...line.matchAll(MONEY_RE)];
+    for (const match of line.matchAll(/\b[A-Z]{3}\b/g)) {
+      const code = match[0];
+      try { currencyMinorDigits(code); }
+      catch { continue; }
+      const codeStart = match.index;
+      const codeEnd = codeStart + code.length;
+      if (!amounts.some((amount) => {
+        const amountStart = amount.index;
+        const amountEnd = amountStart + amount[0].length;
+        const between = codeEnd <= amountStart ? line.slice(codeEnd, amountStart)
+          : amountEnd <= codeStart ? line.slice(amountEnd, codeStart) : null;
+        return between !== null && /^[\s:$-]{0,4}$/.test(between);
+      })) continue;
+      return { value: code, confidence: /\b(total|amount|paid)\b/i.test(line) ? 'high' : 'medium' };
+    }
+  }
+  return null;
 }
 
 function toYear(digits: string): number {
