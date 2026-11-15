@@ -1,9 +1,9 @@
-import { renderClaimPdf, type Batch, type Receipt } from '@remi/core';
+import { renderReceiptPdf, type Batch, type ColumnLayout, type DuplicateDecision, type ExportConfig, type Receipt } from '@remi/core';
 import { File, Paths } from 'expo-file-system';
-import type { ImagePickerAsset } from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as Sharing from 'expo-sharing';
+import { recognizeReceipt } from '../modules/remi-scan/src';
 
-// shortcut: one in-memory NZD claim, until storage and a currency picker exist.
 export const HOME_CURRENCY = 'NZD';
 
 export function newBatch(): Batch {
@@ -11,7 +11,7 @@ export function newBatch(): Batch {
   return { id: createdAt, name: `Expenses ${createdAt.slice(0, 10)}`, createdAt, homeCurrency: HOME_CURRENCY };
 }
 
-export function receiptFromPhoto(photo: ImagePickerAsset, batchId: string): Receipt {
+export function receiptFromPhoto(photo: { uri: string; width: number; height: number }, batchId: string): Receipt {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     batchId,
@@ -28,11 +28,43 @@ export function receiptFromPhoto(photo: ImagePickerAsset, batchId: string): Rece
   };
 }
 
-/** Builds the claim PDF from the receipts' photos, saves it to the cache and opens the share sheet. */
-export async function exportAndShare(batch: Batch, receipts: Receipt[]): Promise<void> {
-  const pdf = await renderClaimPdf({ batch, receipts, loadImage: (uri) => new File(uri).bytes() });
-  const file = new File(Paths.cache, `${batch.name}.pdf`);
-  file.create({ overwrite: true });
-  await file.write(pdf);
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+export async function renderPdf(batch: Batch, receipts: Receipt[], layout?: ColumnLayout,
+  config?: ExportConfig, duplicateDecisions?: DuplicateDecision[]): Promise<Uint8Array> {
+  const originalIds = new Set(config?.mode === 'image_only'
+    ? (config.originalIds ?? []).filter((id) => config.receiptIds.includes(id)) : []);
+  const originalBreaks = config?.mode === 'image_only' ? config.originalBreaks : undefined;
+  const prepared: Receipt[] = [];
+  for (const receipt of receipts) {
+    if (!originalIds.has(receipt.id)) { prepared.push(receipt); continue; }
+    const normalized = await ImageManipulator.manipulateAsync(receipt.image.uri, [], {
+      compress: 1,
+      format: /\.png(?:\?|$)/i.test(receipt.image.uri)
+        ? ImageManipulator.SaveFormat.PNG : ImageManipulator.SaveFormat.JPEG,
+    });
+    const image = { uri: normalized.uri, widthPx: normalized.width, heightPx: normalized.height };
+    try {
+      const recognition = await recognizeReceipt(image.uri);
+      prepared.push({ ...receipt, image, ocrLines: recognition.lines.map(({ top, bottom }) => ({ top, bottom })),
+        breakFractions: originalBreaks?.[receipt.id]?.imageRevision === (receipt.imageRevision ?? 0)
+          ? originalBreaks[receipt.id]!.fractions : undefined });
+    } catch {
+      prepared.push({ ...receipt, image, ocrLines: undefined,
+        breakFractions: originalBreaks?.[receipt.id]?.imageRevision === (receipt.imageRevision ?? 0)
+          ? originalBreaks[receipt.id]!.fractions : undefined });
+    }
+  }
+  return renderReceiptPdf({ batch, receipts: prepared, config, duplicateDecisions,
+    loadImage: (uri) => new File(uri).bytes(), ...(layout && !originalIds.size ? { layout } : {}) });
+}
+
+export async function sharePdf(uri: string): Promise<void> {
+  await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+}
+
+export async function previewPdf(batch: Batch, receipts: Receipt[], layout: ColumnLayout | undefined, revision: number,
+  config?: ExportConfig, duplicateDecisions?: DuplicateDecision[]): Promise<void> {
+  const file = new File(Paths.cache, `remi-preview-${batch.id}-${revision}.pdf`);
+  await file.write(await renderPdf(batch, receipts, layout, config, duplicateDecisions));
+  if (await file.canPreview({ mimeType: 'application/pdf' })) await file.preview({ title: batch.name, mimeType: 'application/pdf' });
+  else await sharePdf(file.uri);
 }
