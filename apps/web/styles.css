@@ -102,6 +102,7 @@ h3 { font-size: 1.4rem; margin: .35rem 0 .7rem; }
 .download-details > div:last-child { border-bottom: 0; }
 .download-details span { font-size: .67rem; letter-spacing: .11em; color: #8cafd9; font-weight: 800; }
 .download-details strong { font-size: .89rem; line-height: 1.45; }
+.download-details .checksum { font-family: "SFMono-Regular", Consolas, monospace; font-size: .7rem; overflow-wrap: anywhere; }
 .site-footer { background: #fff; }
 .footer-inner { min-height: 120px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .footer-inner .brand { font-size: 1.5rem; }
