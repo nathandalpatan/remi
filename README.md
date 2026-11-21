@@ -71,6 +71,8 @@ pnpm start             # connect the installed development build
 
 For an Android phone from Windows, sign in from `apps/mobile` with `pnpm dlx eas-cli login`, link the app once with `pnpm dlx eas-cli init`, then run `pnpm dlx eas-cli build --platform android --profile development`. Install the APK from the EAS build link.
 
+For a standalone Android beta that installs alongside the development app, run `pnpm dlx eas-cli build --platform android --profile preview` from `apps/mobile`. The preview profile uses `com.remi.receipts.beta`, creates an APK with bundled JavaScript, and uses EAS-managed signing credentials so later beta builds can update it. The public website source is in `apps/web`; GitHub Pages publishes it from `main`.
+
 For an iPhone without a paid Apple Developer membership, build locally on a Mac. Install Xcode, sign in to your Apple Account under Xcode Settings → Accounts, and connect your iPhone with Developer Mode enabled. With this app's source on the Mac, run `pnpm install` from the repository root, then `pnpm exec expo run:ios --device` from `apps/mobile`. If signing needs attention, select your Personal Team under Signing & Capabilities in Xcode. Personal Team provisioning expires after seven days, so reinstall the build when it expires. An EAS iPhone build from Windows instead requires Apple Developer Program membership: run `pnpm dlx eas-cli device:create`, then `pnpm dlx eas-cli build --platform ios --profile development`.
 
 After either development build is installed, run `pnpm start` from `apps/mobile` and keep the phone and computer on the same Wi-Fi.

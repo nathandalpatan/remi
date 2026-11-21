@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7faff">
+  <meta name="description" content="Developer setup, architecture, and build notes for Remi, the open source receipt claim app.">
+  <title>Developers — Remi</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="Remi home"><span class="brand-mark" aria-hidden="true">▤</span>remi<span class="brand-dot">.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="./#how-it-works">How it works</a>
+        <a href="./developers.html" aria-current="page">Developers</a>
+        <a href="https://github.com/nathandalpatan/remi">GitHub</a>
+      </nav>
+      <a class="header-action" href="./#download">Get the beta <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main" class="docs-main shell">
+    <div class="docs-intro">
+      <span class="eyebrow">DEVELOPER NOTES</span>
+      <h1>Build Remi.</h1>
+      <p class="lead">A React Native app for capture and review, backed by a UI-free TypeScript core for money, layout, and exports.</p>
+      <div class="actions"><a class="button button-primary" href="https://github.com/nathandalpatan/remi">View source <span aria-hidden="true">↗</span></a><a class="button button-secondary" href="https://github.com/nathandalpatan/remi/blob/main/README.md">Full README <span aria-hidden="true">→</span></a></div>
+    </div>
+    <div class="docs-grid">
+      <aside class="docs-nav" aria-label="On this page"><span>ON THIS PAGE</span><a href="#quickstart">Quickstart</a><a href="#architecture">Architecture</a><a href="#native-builds">Native builds</a><a href="#principles">Design rules</a></aside>
+      <div class="docs-content">
+        <section id="quickstart">
+          <span class="eyebrow">01 / GET RUNNING</span><h2>Quickstart</h2>
+          <p>Install dependencies from the repository root, then run the core and mobile checks.</p>
+          <pre><code>pnpm install
+pnpm typecheck
+pnpm test
+pnpm build</code></pre>
+          <p>The mobile app imports the built <code>@remi/core</code> package. Rebuild core after changing it.</p>
+        </section>
+        <section id="architecture">
+          <span class="eyebrow">02 / HOW IT FITS</span><h2>Architecture</h2>
+          <div class="architecture-list">
+            <div><strong>Mobile app</strong><p>Expo and React Native handle scanning, review, local SQLite documents, and sharing.</p></div>
+            <div><strong>Core library</strong><p>Pure TypeScript extracts field suggestions, checks totals, lays out receipts, and renders PDF and CSV exports.</p></div>
+            <div><strong>Device storage</strong><p>Drafts, source photos, and export versions stay in the app’s private document directory.</p></div>
+          </div>
+        </section>
+        <section id="native-builds">
+          <span class="eyebrow">03 / ON DEVICE</span><h2>Native builds</h2>
+          <p>Remi’s scanner and image processor require a native build; Expo Go cannot load them. For local development on Android, use an Android SDK and a connected device or emulator:</p>
+          <pre><code>cd apps/mobile
+pnpm expo run:android
+pnpm start</code></pre>
+          <p>The public beta uses the <code>preview</code> EAS profile. It produces a standalone APK under <code>com.remi.receipts.beta</code> with a stable, Expo-managed signing key. Build it with:</p>
+          <pre><code>cd apps/mobile
+pnpm dlx eas-cli build --platform android --profile preview</code></pre>
+          <p>See the <a href="https://github.com/nathandalpatan/remi/blob/main/README.md">README</a> for iOS and development build details.</p>
+        </section>
+        <section id="principles">
+          <span class="eyebrow">04 / WHAT MATTERS</span><h2>Design rules</h2>
+          <ul>
+            <li>Money uses integer minor units; OCR never silently approves a value.</li>
+            <li>Export waits for confirmed receipt details and produces a reviewable cover sheet.</li>
+            <li>PDFs are views of editable local drafts, not the source of truth.</li>
+            <li>Receipt placement is stored in millimetres so the canvas and PDF agree.</li>
+          </ul>
+          <p>Read the <a href="https://github.com/nathandalpatan/remi/blob/main/docs/receipt-scanning-contracts.md">receipt scanning contracts</a> for the native pipeline’s behaviour.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="shell footer-inner"><a class="brand" href="./">remi<span class="brand-dot">.</span></a><p>Made for clearer expense claims. Built in the open.</p><div><a href="./">Overview</a><a href="https://github.com/nathandalpatan/remi">Source code</a></div></div></footer>
+</body>
+</html>
