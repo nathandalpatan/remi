@@ -1,93 +1,84 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-type="software" data-radius="soft" data-buttons="arrow" data-motion>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7faff">
-  <meta name="description" content="Remi turns receipt photos into one clear, reviewable expense claim. Explore the Android beta and developer documentation.">
-  <title>Remi — receipts, ready to claim</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f9f8">
+  <meta name="site-kind" content="software">
+  <meta name="page-type" content="software">
+  <meta name="description" content="Remi scans receipts on Android, lets you confirm each amount, then exports one expense claim as PDF and CSV.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Remi: receipt claims on Android">
+  <meta property="og:description" content="Scan receipts, confirm the numbers, and export one PDF and CSV claim.">
+  <meta property="og:image" content="https://nathandalpatan.github.io/remi/share.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Remi: receipt claims on Android</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=4">
+  <link rel="stylesheet" href="./assets/motion/motion.css">
+  <script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+  <script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+  <link rel="modulepreload" href="./assets/moments/moments.js">
+  <link rel="modulepreload" href="./assets/moments/lib.js">
+  <link rel="modulepreload" href="./assets/moments/word-highlight/moment.js">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <div class="shell header-inner">
-      <a class="brand" href="./" aria-label="Remi home"><span class="brand-mark" aria-hidden="true">▤</span>remi<span class="brand-dot">.</span></a>
-      <nav aria-label="Main navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="./developers.html">Developers</a>
-        <a href="https://github.com/nathandalpatan/remi">GitHub</a>
-      </nav>
-      <a class="header-action" href="#download">Get the beta <span aria-hidden="true">↗</span></a>
+  <!-- software; centred hero, teal-on-paper, Host Grotesk, nav-centre, footer-statement, close-word, space, arrow, wordmark; word-highlight at privacy -->
+  <header class="site-header nav"><div class="wrap header-inner">
+    <a class="skip-link" href="#top">Skip to content</a>
+    <a class="brand" href="#top" aria-label="Remi home">remi<span>.</span></a>
+    <nav class="header-nav" aria-label="Main navigation"><a href="#workflow">Workflow</a><a href="#review">Review</a><a href="./developers.html">Developers</a><a href="https://github.com/nathandalpatan/remi">Source</a></nav>
+    <a class="header-cta" href="https://github.com/nathandalpatan/remi/releases/download/v1.0.0-beta.1/remi-beta-1.0.0.apk">Download APK <span aria-hidden="true">↗</span></a>
+  </div></header>
+  <main id="top">
+    <section class="hero" data-enter aria-labelledby="hero-title"><div class="wrap hero-inner"><div class="hero-text"><div class="hero-copy">
+      <p class="hero-status"><span class="status-light" aria-hidden="true"></span> Android beta · 1.0.0</p>
+      <h1 id="hero-title">Receipt claims on your Android phone.</h1>
+      <p class="hero-lead">Scan a batch of receipts, check the amounts, and share one compact expense claim as a PDF and CSV.</p>
+      <div class="hero-actions"><a class="button button-primary" href="https://github.com/nathandalpatan/remi/releases/download/v1.0.0-beta.1/remi-beta-1.0.0.apk">Download APK <span aria-hidden="true">↗</span></a><a class="text-action" href="./developers.html">Read developer docs <span aria-hidden="true">↗</span></a></div>
     </div>
-  </header>
-
-  <main id="main">
-    <section class="hero shell" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <span class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Android beta · open development</span>
-        <h1 id="hero-title">Receipts, ready to claim.</h1>
-        <p class="lead">Photograph your receipts, check the numbers, and turn the whole batch into one compact PDF and CSV.</p>
-        <div class="actions">
-          <a class="button button-primary" href="#download">Download Android beta <span aria-hidden="true">↗</span></a>
-          <a class="button button-secondary" href="./developers.html">Explore the code <span aria-hidden="true">→</span></a>
+      <div class="hero-stage frame" data-visual role="img" aria-label="Remi document screen beside a two-receipt PDF claim">
+        <div class="stage-lines" aria-hidden="true"></div>
+        <div class="phone-screen" aria-hidden="true">
+          <div class="phone-top"><span class="app-icon">R</span><strong>Remi</strong><span class="phone-tools">⌕ &nbsp; ↕</span></div>
+          <div class="phone-body"><div class="phone-title">My Documents</div><div class="phone-tabs"><b>All</b><span>Drafts</span><span>Completed</span></div>
+            <div class="phone-doc"><span class="phone-thumb"></span><div><strong>November claims</strong><small>2 receipts · 2026-11-18</small><em>Draft</em></div><span>›</span></div>
+            <div class="phone-doc"><span class="phone-thumb second"></span><div><strong>Travel expenses</strong><small>3 receipts · 2026-11-12</small><em class="complete">✓ Completed</em></div><span>›</span></div>
+            <div class="phone-add">＋ Add receipts to a new document</div>
+          </div>
+          <div class="phone-nav"><span>▤<small>Documents</small></span><span>⌗<small>Add receipts</small></span><span>⇩<small>Exports</small></span><span>♙<small>Profile</small></span></div>
         </div>
-        <p class="hero-note">Your drafts and images stay on your device. No account required.</p>
+        <div class="output-sheet" aria-hidden="true"><div class="output-head"><span>REMI / EXPENSE CLAIM</span><span>01</span></div><div class="output-title">November claims</div><div class="output-rule"></div><div class="output-row"><span>01 &nbsp; Café North</span><strong>$18.40</strong></div><div class="output-row"><span>02 &nbsp; Supplies</span><strong>$42.90</strong></div><div class="output-total"><span>Total</span><strong>$61.30</strong></div><div class="output-slips"><span></span><span></span></div></div>
       </div>
-      <div class="hero-visual" role="img" aria-label="Illustration of receipt photos arranged into a single expense claim">
-        <div class="visual-grid" aria-hidden="true"></div>
-        <div class="receipt receipt-left" aria-hidden="true"><div class="receipt-top"></div><span>CAFÉ</span><i></i><i></i><i class="short"></i><strong>$18.40</strong></div>
-        <div class="receipt receipt-right" aria-hidden="true"><div class="receipt-top"></div><span>SUPPLIES</span><i></i><i></i><i></i><strong>$42.90</strong></div>
-        <div class="claim-sheet" aria-hidden="true">
-          <div class="sheet-top"><span>REMI / CLAIM</span><span>01</span></div>
-          <div class="sheet-title">Expense claim</div>
-          <div class="sheet-rule"></div>
-          <div class="sheet-row"><span>01 &nbsp; Café</span><b>$18.40</b></div>
-          <div class="sheet-row"><span>02 &nbsp; Supplies</span><b>$42.90</b></div>
-          <div class="sheet-total"><span>Total</span><b>$61.30</b></div>
-          <div class="sheet-thumb-row"><div class="sheet-thumb"></div><div class="sheet-thumb"></div></div>
-        </div>
-        <div class="visual-label">One tidy claim from many receipts</div>
+    </div></div></section>
+    <section class="section workflow-section" id="workflow" aria-labelledby="workflow-title"><div class="wrap">
+      <div class="section-heading"><p class="kicker">The workflow</p><h2 id="workflow-title">One claim from a stack of receipts.</h2><p>Remi keeps the original image and the details you confirm together in an editable document.</p></div>
+      <div class="workflow-grid">
+        <article class="workflow-step"><span class="step-index">01 / Capture</span><div class="step-visual scan-visual" role="img" aria-label="Receipt in Remi's scan frame"><div class="scan-page"><span>CAFÉ NORTH</span><i></i><i></i><i></i><strong>$18.40</strong></div><div class="scan-corners"><i></i><i></i><i></i><i></i></div></div><h3>Bring receipts in</h3><p>Scan with the camera or import from your gallery. The native scanner corrects the image before review.</p></article>
+        <article class="workflow-step"><span class="step-index">02 / Review</span><div class="step-visual review-visual" role="img" aria-label="Suggested merchant and total in Remi's review screen"><div class="mini-field"><span>Merchant</span><strong>Café North</strong></div><div class="mini-field"><span>Suggested total</span><strong>$18.40</strong></div><div class="mini-confirm">✓ &nbsp; Confirm amount</div></div><h3>Confirm receipt details</h3><p>On-device OCR suggests values. You can edit the merchant, date, tax, and amount before export.</p></article>
+        <article class="workflow-step"><span class="step-index">03 / Export</span><div class="step-visual export-visual" role="img" aria-label="PDF and CSV files exported from one claim"><div class="mini-pdf">PDF<span>November claims</span></div><div class="mini-csv">CSV<span>2 receipt rows</span></div><div class="export-arrow">↗</div></div><h3>Share the claim</h3><p>Remi packs the receipts onto A4 pages and creates a cover sheet, PDF, and CSV for finance.</p></article>
       </div>
-    </section>
-
-    <section class="process-band" id="how-it-works" aria-labelledby="process-title">
-      <div class="shell">
-        <div class="section-heading"><span class="eyebrow">THE WORKFLOW</span><h2 id="process-title">From paper to payout, in three steps.</h2></div>
-        <div class="step-grid">
-          <article class="step"><span class="step-number">01 / CAPTURE</span><div class="step-icon" aria-hidden="true">▧</div><h3>Bring receipts in</h3><p>Scan with the camera or add photos from your gallery. Remi keeps the source image alongside the corrected version.</p></article>
-          <article class="step"><span class="step-number">02 / REVIEW</span><div class="step-icon" aria-hidden="true">✓</div><h3>Verify the details</h3><p>On-device OCR suggests totals, tax, dates, and merchants. You confirm the fields before anything is exported.</p></article>
-          <article class="step"><span class="step-number">03 / EXPORT</span><div class="step-icon" aria-hidden="true">↗</div><h3>Share one claim</h3><p>Pack legible receipts onto A4 pages, add a cover sheet, and share a PDF plus a finance-friendly CSV.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="detail shell" aria-labelledby="detail-title">
-      <div class="detail-copy"><span class="eyebrow">MADE TO BE CHECKED</span><h2 id="detail-title">The total is yours to approve.</h2><p>Remi treats extracted values as suggestions. It highlights details that need attention and blocks export until every receipt has been confirmed.</p><a class="text-link" href="./developers.html">See how the pipeline works <span aria-hidden="true">→</span></a></div>
-      <div class="verification-card" aria-label="Illustration of receipt review states">
-        <div class="verification-head"><span>RECEIPT REVIEW</span><span class="pending">Needs confirmation</span></div>
-        <div class="verification-row"><span>Merchant</span><strong>Café North</strong></div>
-        <div class="verification-row"><span>Date</span><strong>18 Nov 2026</strong></div>
-        <div class="verification-row important"><span>Suggested total</span><strong>$18.40 <span aria-hidden="true">✓</span></strong></div>
-        <div class="verification-foot"><span class="check-mark" aria-hidden="true">✓</span> Review values against the original image</div>
-      </div>
-    </section>
-
-    <section class="download-band" id="download" aria-labelledby="download-title">
-      <div class="shell download-layout">
-        <div><span class="eyebrow">ANDROID BETA</span><h2 id="download-title">Try Remi on your phone.</h2><p>A standalone development build for Android 7 or newer. The beta installs alongside the current local Remi app and starts with its own empty drafts.</p><div class="actions"><a class="button button-light" href="https://github.com/nathandalpatan/remi/releases/download/v1.0.0-beta.1/remi-beta-1.0.0.apk">Download APK <span aria-hidden="true">↗</span></a><a class="download-secondary" href="https://github.com/nathandalpatan/remi/releases/tag/v1.0.0-beta.1">Release notes <span aria-hidden="true">→</span></a></div></div>
-        <div class="download-details">
-          <div><span>VERSION</span><strong>1.0.0 beta 1 · 291 MB</strong></div>
-          <div><span>PACKAGE</span><strong>com.remi.receipts.beta</strong></div>
-          <div><span>SHA-256</span><strong class="checksum">AF4B508F20CAB7B13A11D753738E8B145ED353A7F415B608E70F1BC4031EB889</strong></div>
-          <div><span>INSTALL</span><strong>Open the APK on your Android device and allow installation from that source.</strong></div>
-          <div><span>YOUR DATA</span><strong>Drafts stay on the device. Uninstalling the beta removes them.</strong></div>
-        </div>
-      </div>
-    </section>
+    </div></section>
+    <section class="section review-section" id="review" aria-labelledby="review-title"><div class="wrap review-layout">
+      <div class="review-copy"><p class="kicker">Human checked</p><h2 id="review-title">Review each receipt before export.</h2><p>OCR offers a starting point. Remi shows amounts that need confirmation and prevents an unresolved claim from being exported as complete.</p><a class="inline-link" href="./developers.html#architecture">See the review pipeline <span aria-hidden="true">↗</span></a></div>
+      <div class="review-window" role="img" aria-label="Remi receipt review interface with a suggested amount awaiting confirmation"><div class="review-window-head"><span class="app-icon">R</span><strong>Receipt review</strong><span>2 of 2</span></div><div class="review-window-body"><div class="review-image" aria-hidden="true"><div class="receipt-paper"><b>CAFÉ NORTH</b><i></i><i></i><i></i><i></i><strong>TOTAL &nbsp; $18.40</strong></div></div><div class="review-fields"><div class="review-state"><span></span> Needs confirmation</div><div class="field-row"><span>Merchant</span><strong>Café North</strong></div><div class="field-row"><span>Date</span><strong>18 Nov 2026</strong></div><div class="field-row focus"><span>Suggested total</span><strong>$18.40</strong></div><div class="confirm-control">✓ &nbsp; Confirm receipt</div></div></div></div>
+    </div></section>
+    <section class="section export-section" id="export" aria-labelledby="export-title"><div class="wrap export-layout">
+      <div class="export-copy"><p class="kicker">Ready to send</p><h2 id="export-title">A PDF your team can check.</h2><p>The cover sheet lists every included receipt and the verified total. Receipt images follow in a compact A4 layout, with a CSV beside the PDF.</p><a class="inline-link" href="./developers.html#architecture">Read about the export core <span aria-hidden="true">↗</span></a></div>
+      <div class="export-art" role="img" aria-label="PDF cover sheet, receipt page, and CSV rows from the same claim"><div class="pdf-page pdf-cover"><span>REMI / CLAIM</span><div class="pdf-title">November claims</div><div class="pdf-line"><span>Café North</span><strong>$18.40</strong></div><div class="pdf-line"><span>Supplies</span><strong>$42.90</strong></div><div class="pdf-total"><span>Total</span><strong>$61.30</strong></div></div><div class="pdf-page pdf-receipts"><div class="pdf-receipt"></div><div class="pdf-receipt short"></div></div><div class="csv-card"><span>claim.csv</span><code>merchant,total<br>Café North,18.40<br>Supplies,42.90</code></div></div>
+    </div></section>
+    <section class="section statement-section" id="privacy" data-moment="word-highlight" aria-labelledby="privacy-title"><div class="wrap"><h2 id="privacy-title">Receipt files stay on your phone.</h2><p class="mo-wh__text">Drafts, receipt images, and PDF versions remain <strong>on your device</strong>. Remi does not require an account or cross-device sync.</p></div></section>
   </main>
-
-  <footer class="site-footer"><div class="shell footer-inner"><a class="brand" href="./">remi<span class="brand-dot">.</span></a><p>Made for clearer expense claims. Built in the open.</p><div><a href="./developers.html">Developer docs</a><a href="https://github.com/nathandalpatan/remi">Source code</a></div></div></footer>
+  <footer class="site-footer closing download-section" id="download" aria-labelledby="download-title"><div class="wrap">
+    <div class="download-layout">
+      <div class="download-main"><p class="kicker">Android beta</p><h2 id="download-title">Download Remi for Android.</h2><p>The beta runs on Android 7 or newer. It installs beside the current local Remi app, with its own empty drafts.</p><a class="button button-inverse" href="https://github.com/nathandalpatan/remi/releases/download/v1.0.0-beta.1/remi-beta-1.0.0.apk">Download APK <span aria-hidden="true">↗</span></a><a class="release-link" href="https://github.com/nathandalpatan/remi/releases/tag/v1.0.0-beta.1">Read release notes <span aria-hidden="true">↗</span></a></div>
+      <dl class="download-facts"><div><dt>Version</dt><dd>1.0.0 beta 1 · 291 MB</dd></div><div><dt>Package</dt><dd>com.remi.receipts.beta</dd></div><div><dt>SHA-256</dt><dd class="checksum">AF4B508F20CAB7B13A11D753738E8B145ED353A7F415B608E70F1BC4031EB889</dd></div><div><dt>Install</dt><dd>Open the APK on your Android device and allow installation from that source.</dd></div><div><dt>Data</dt><dd>Drafts stay on this device. Uninstalling the beta removes them.</dd></div></dl>
+    </div>
+    <div class="footer-inner"><a class="brand" href="#top">remi<span>.</span></a><p>Receipt claims for Android, built in the open.</p><nav aria-label="Footer"><a href="./developers.html">Developer docs</a><a href="https://github.com/nathandalpatan/remi">Source code</a><a href="https://github.com/nathandalpatan/remi/releases/tag/v1.0.0-beta.1">Release notes</a></nav></div>
+  </div></footer>
+  <script type="module" src="./assets/moments/moments.js"></script>
 </body>
 </html>

@@ -1,40 +1,41 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-type="software" data-radius="soft" data-buttons="arrow" data-motion>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7faff">
-  <meta name="description" content="Developer setup, architecture, and build notes for Remi, the open source receipt claim app.">
-  <title>Developers — Remi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f9f8">
+  <meta name="site-kind" content="software">
+  <meta name="page-type" content="software">
+  <meta name="description" content="Build Remi from source. Read the quickstart, architecture, Android build commands, and receipt processing rules.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Remi developers: build the receipt app">
+  <meta property="og:description" content="Quickstart, architecture, and native build notes for Remi.">
+  <meta property="og:image" content="https://nathandalpatan.github.io/remi/share.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Remi developers: build the receipt app</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=4">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
-    <div class="shell header-inner">
-      <a class="brand" href="./" aria-label="Remi home"><span class="brand-mark" aria-hidden="true">▤</span>remi<span class="brand-dot">.</span></a>
-      <nav aria-label="Main navigation">
-        <a href="./#how-it-works">How it works</a>
-        <a href="./developers.html" aria-current="page">Developers</a>
-        <a href="https://github.com/nathandalpatan/remi">GitHub</a>
-      </nav>
-      <a class="header-action" href="./#download">Get the beta <span aria-hidden="true">↗</span></a>
-    </div>
-  </header>
-
-  <main id="main" class="docs-main shell">
-    <div class="docs-intro">
-      <span class="eyebrow">DEVELOPER NOTES</span>
-      <h1>Build Remi.</h1>
-      <p class="lead">A React Native app for capture and review, backed by a UI-free TypeScript core for money, layout, and exports.</p>
-      <div class="actions"><a class="button button-primary" href="https://github.com/nathandalpatan/remi">View source <span aria-hidden="true">↗</span></a><a class="button button-secondary" href="https://github.com/nathandalpatan/remi/blob/main/README.md">Full README <span aria-hidden="true">→</span></a></div>
-    </div>
-    <div class="docs-grid">
-      <aside class="docs-nav" aria-label="On this page"><span>ON THIS PAGE</span><a href="#quickstart">Quickstart</a><a href="#architecture">Architecture</a><a href="#native-builds">Native builds</a><a href="#principles">Design rules</a></aside>
+  <header class="site-header nav"><div class="wrap header-inner">
+    <a class="skip-link" href="#top">Skip to content</a>
+    <a class="brand" href="./" aria-label="Remi home">remi<span>.</span></a>
+    <nav class="header-nav" aria-label="Main navigation"><a href="./#workflow">Workflow</a><a href="./#review">Review</a><a href="./developers.html" aria-current="page">Developers</a><a href="https://github.com/nathandalpatan/remi">Source</a></nav>
+    <a class="header-cta" href="https://github.com/nathandalpatan/remi/releases/download/v1.0.0-beta.1/remi-beta-1.0.0.apk">Download APK <span aria-hidden="true">↗</span></a>
+  </div></header>
+  <main id="top" class="docs-main">
+    <section class="docs-hero" aria-labelledby="docs-title"><div class="wrap">
+      <p class="kicker">Developer notes</p><h1 id="docs-title">Build the Remi receipt app.</h1>
+      <p>Remi pairs an Expo and React Native app with a UI-free TypeScript core for receipt extraction, money, layout, and exports.</p>
+      <div class="docs-actions"><a class="button button-primary" href="https://github.com/nathandalpatan/remi">View source <span aria-hidden="true">↗</span></a><a class="text-action" href="https://github.com/nathandalpatan/remi/blob/main/README.md">Read the full README <span aria-hidden="true">↗</span></a></div>
+    </div></section>
+    <div class="wrap docs-layout">
+      <aside class="docs-nav" aria-label="On this page"><span>On this page</span><a href="#quickstart">Quickstart</a><a href="#architecture">Architecture</a><a href="#native-builds">Native builds</a><a href="#principles">Design rules</a></aside>
       <div class="docs-content">
-        <section id="quickstart">
-          <span class="eyebrow">01 / GET RUNNING</span><h2>Quickstart</h2>
+        <section id="quickstart" aria-labelledby="quickstart-title"><h2 id="quickstart-title">Quickstart</h2>
           <p>Install dependencies from the repository root, then run the core and mobile checks.</p>
           <pre><code>pnpm install
 pnpm typecheck
@@ -42,16 +43,14 @@ pnpm test
 pnpm build</code></pre>
           <p>The mobile app imports the built <code>@remi/core</code> package. Rebuild core after changing it.</p>
         </section>
-        <section id="architecture">
-          <span class="eyebrow">02 / HOW IT FITS</span><h2>Architecture</h2>
+        <section id="architecture" aria-labelledby="architecture-title"><h2 id="architecture-title">Architecture</h2>
           <div class="architecture-list">
             <div><strong>Mobile app</strong><p>Expo and React Native handle scanning, review, local SQLite documents, and sharing.</p></div>
             <div><strong>Core library</strong><p>Pure TypeScript extracts field suggestions, checks totals, lays out receipts, and renders PDF and CSV exports.</p></div>
             <div><strong>Device storage</strong><p>Drafts, source photos, and export versions stay in the app’s private document directory.</p></div>
           </div>
         </section>
-        <section id="native-builds">
-          <span class="eyebrow">03 / ON DEVICE</span><h2>Native builds</h2>
+        <section id="native-builds" aria-labelledby="builds-title"><h2 id="builds-title">Native builds</h2>
           <p>Remi’s scanner and image processor require a native build; Expo Go cannot load them. For local development on Android, use an Android SDK and a connected device or emulator:</p>
           <pre><code>cd apps/mobile
 pnpm expo run:android
@@ -61,8 +60,7 @@ pnpm start</code></pre>
 pnpm dlx eas-cli build --platform android --profile preview</code></pre>
           <p>See the <a href="https://github.com/nathandalpatan/remi/blob/main/README.md">README</a> for iOS and development build details.</p>
         </section>
-        <section id="principles">
-          <span class="eyebrow">04 / WHAT MATTERS</span><h2>Design rules</h2>
+        <section id="principles" aria-labelledby="principles-title"><h2 id="principles-title">Design rules</h2>
           <ul>
             <li>Money uses integer minor units; OCR never silently approves a value.</li>
             <li>Export waits for confirmed receipt details and produces a reviewable cover sheet.</li>
@@ -74,7 +72,6 @@ pnpm dlx eas-cli build --platform android --profile preview</code></pre>
       </div>
     </div>
   </main>
-
-  <footer class="site-footer"><div class="shell footer-inner"><a class="brand" href="./">remi<span class="brand-dot">.</span></a><p>Made for clearer expense claims. Built in the open.</p><div><a href="./">Overview</a><a href="https://github.com/nathandalpatan/remi">Source code</a></div></div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><a class="brand" href="./">remi<span>.</span></a><p>Receipt claims for Android, built in the open.</p><nav aria-label="Footer"><a href="./">Overview</a><a href="https://github.com/nathandalpatan/remi">Source code</a><a href="https://github.com/nathandalpatan/remi/releases/tag/v1.0.0-beta.1">Release notes</a></nav></div></footer>
 </body>
 </html>
