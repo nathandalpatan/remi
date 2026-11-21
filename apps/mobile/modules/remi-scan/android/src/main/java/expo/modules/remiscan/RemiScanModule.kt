@@ -268,7 +268,9 @@ class RemiScanModule : Module() {
           edges.release()
         }
       }
-      val points = best ?: return Detection()
+      val points = best ?: return if (paperTouchesFrame(gray)) {
+        Detection(edgeContact = true, issues = listOf("boundary_not_found", "boundary_touches_frame"))
+      } else Detection()
       val raw = points.flatMap { listOf(it.x / bitmap.width, it.y / bitmap.height) }
       val edge = raw.chunked(2).any { it[0] < 0.015 || it[0] > 0.985 || it[1] < 0.015 || it[1] > 0.985 }
       val margin = if (bestScore < 0.7) 0.03 else 0.01
@@ -295,6 +297,30 @@ class RemiScanModule : Module() {
       source.release()
       bitmap.recycle()
     }
+  }
+
+  private fun paperTouchesFrame(gray: Mat): Boolean {
+    val width = gray.cols()
+    val height = gray.rows()
+    if (width < 64 || height < 64) return false
+    val start = (width * 0.15).toInt()
+    val end = (width * 0.85).toInt()
+    val step = kotlin.math.max(1, (end - start) / 256)
+    val sampleCount = (end - start + step - 1) / step
+    val inset = kotlin.math.max(1, (height * 0.015).toInt())
+
+    for ((edgeY, innerY) in listOf(0 to inset, height - 1 to height - 1 - inset)) {
+      var run = 0
+      var longest = 0
+      for (x in start until end step step) {
+        val paper = gray.get(edgeY, x)[0] >= 130 && gray.get(innerY, x)[0] >= 130
+        run = if (paper) run + 1 else 0
+        longest = kotlin.math.max(longest, run)
+      }
+      val fraction = longest.toDouble() / sampleCount
+      if (fraction >= 0.45 && fraction < 0.9) return true
+    }
+    return false
   }
 
   private fun featureRisk(gray: Mat, points: Array<Point>, width: Int, height: Int): Double {
