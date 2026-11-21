@@ -18,9 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,4 +26,11 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: apps/web
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/deploy-pages@v4
