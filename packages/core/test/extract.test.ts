@@ -35,6 +35,50 @@ describe('extractFields', () => {
     expect(fields.gstCents?.value).toBe(300);
   });
 
+  it('pairs a right-column amount with its inclusive total label', () => {
+    const text = 'Total excluding tax 67.82\nGST 10.18\nota1 including tax\n78.00';
+    const ocrLines = [
+      { text: 'Total excluding tax 67.82', left: 0.34, right: 0.47, top: 0.449, bottom: 0.456 },
+      { text: 'GST 10.18', left: 0.34, right: 0.48, top: 0.458, bottom: 0.464 },
+      { text: 'ota1 including tax', left: 0.34, right: 0.448, top: 0.465, bottom: 0.472 },
+      { text: '78.00', left: 0.524, right: 0.553, top: 0.467, bottom: 0.472 },
+    ];
+    expect(extractFields(text, { ocrLines }).totalCents).toEqual({ value: 7800, confidence: 'medium' });
+    expect(extractFieldCandidates(text, 4, { ocrLines }).find((item) => item.field === 'amount'))
+      .toMatchObject({ value: 7800, evidence: { lineIndexes: [2, 3], imageRevision: 4 } });
+  });
+
+  it('prefers the right-column total over tax and rounding amounts on the same row', () => {
+    const text = 'Total (incl GST of $220.30)\n1,688.99\n0.00';
+    const ocrLines = [
+      { text: 'Total (incl GST of $220.30)', left: 0.357, right: 0.552, top: 0.503, bottom: 0.522 },
+      { text: '1,688.99', left: 0.578, right: 0.632, top: 0.501, bottom: 0.514 },
+      { text: '0.00', left: 0.607, right: 0.634, top: 0.514, bottom: 0.525 },
+    ];
+    expect(extractFields(text, { ocrLines }).totalCents?.value).toBe(168899);
+    expect(extractFields(text).totalCents?.value).toBe(22030);
+  });
+
+  it('does not pair unrelated amounts without overlapping OCR boxes', () => {
+    const text = 'TOTAL\nItem 40.00';
+    const ocrLines = [
+      { text: 'TOTAL', left: 0.2, right: 0.4, top: 0.4, bottom: 0.42 },
+      { text: '40.00', left: 0.6, right: 0.7, top: 0.6, bottom: 0.62 },
+    ];
+    expect(extractFields(text, { ocrLines }).totalCents?.value).toBe(4000);
+    expect(extractFields(text, { ocrLines }).totalCents?.confidence).toBe('low');
+  });
+
+  it('does not mistake an included-GST detail for the payable total', () => {
+    const text = 'TOTAL 135.18\nTotal includes GST of\n17.63';
+    const ocrLines = [
+      { text: 'TOTAL 135.18', left: 0.03, right: 0.18, top: 0.29, bottom: 0.30 },
+      { text: 'Total includes GST of', left: 0.04, right: 0.47, top: 0.43, bottom: 0.44 },
+      { text: '17.63', left: 0.79, right: 0.85, top: 0.43, bottom: 0.44 },
+    ];
+    expect(extractFields(text, { ocrLines }).totalCents?.value).toBe(13518);
+  });
+
   it('handles thousands separators', () => {
     expect(extractFields('Grand Total $1,234.50').totalCents?.value).toBe(123450);
   });

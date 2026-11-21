@@ -144,7 +144,7 @@ export async function processQueuedImage(source: SavedReceipt, working: WorkingI
     }
   }
   if (!recognition.text.trim()) issues.push('no_text_recognized');
-  const fields = extractFields(recognition.text);
+  const fields = extractFields(recognition.text, { ocrLines: recognition.lines });
   const currency = fields.currency?.value ?? null;
   let amountMinorUnits: number | null = null;
   if (currency && fields.totalCents) {
@@ -152,7 +152,7 @@ export async function processQueuedImage(source: SavedReceipt, working: WorkingI
     catch { issues.push('unsupported_currency'); }
   }
   const imageRevision = source.imageRevision ?? 0;
-  const candidates = extractFieldCandidates(recognition.text, imageRevision);
+  const candidates = extractFieldCandidates(recognition.text, imageRevision, { ocrLines: recognition.lines });
   let sourceSha256: string | undefined;
   try { sourceSha256 = await hashReceiptSource(source.image.uri); }
   catch { issues.push('source_hash_failed'); }

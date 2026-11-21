@@ -26,6 +26,7 @@ export interface ExtractedFields {
 export interface ExtractOptions {
   /** NZ, AU and UK write 03/04/2026 as 3 April. Set false for US-style receipts. */
   dayFirst?: boolean;
+  ocrLines?: Array<{ text?: string; left?: number; right?: number; top: number; bottom: number }>;
 }
 
 // An amount always has exactly two decimals; that excludes phone, GST and card numbers.
@@ -59,7 +60,7 @@ export function extractFields(ocrText: string, options: ExtractOptions = {}): Ex
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  const totalCents = extractTotal(lines);
+  const totalCents = extractTotal(lines, options.ocrLines);
   return {
     totalCents,
     gstCents: extractGst(lines, totalCents?.value ?? null),
@@ -70,9 +71,10 @@ export function extractFields(ocrText: string, options: ExtractOptions = {}): Ex
 }
 
 /** Field suggestions retain the OCR line that supports each value. */
-export function extractFieldCandidates(ocrText: string, imageRevision: number): FinancialCandidate[] {
+export function extractFieldCandidates(ocrText: string, imageRevision: number, options: ExtractOptions = {}): FinancialCandidate[] {
   const lines = ocrText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const extracted = extractFields(ocrText);
+  const extracted = extractFields(ocrText, options);
+  const spatialTotal = findSpatialTotal(options.ocrLines);
   const values: [FinancialField, Extracted<string | number> | null][] = [
     ['amount', extracted.totalCents], ['gst', extracted.gstCents], ['date', extracted.date],
     ['merchant', extracted.merchant], ['currency', extracted.currency],
@@ -85,9 +87,11 @@ export function extractFieldCandidates(ocrText: string, imageRevision: number): 
       : field === 'date' ? extractDate([line], true)?.value === candidate.value
       : field === 'gst' ? GST_RE.test(line) && amountsIn(line).includes(candidate.value as number)
       : line.toLowerCase().includes(String(candidate.value).toLowerCase()));
+    const lineIndexes = field === 'amount' && spatialTotal?.cents === candidate.value
+      ? spatialTotal.lineIndexes : lineIndex >= 0 ? [lineIndex] : undefined;
     return [{ field, value: candidate.value, confidence: candidate.confidence,
       evidence: { source: 'ocr' as const, imageRevision,
-        ...(lineIndex >= 0 ? { lineIndexes: [lineIndex] } : {}) } }];
+        ...(lineIndexes ? { lineIndexes } : {}) } }];
   });
 }
 
@@ -97,7 +101,38 @@ function amountsIn(line: string): number[] {
     .filter((cents): cents is number => cents !== null);
 }
 
-function extractTotal(lines: string[]): Extracted<number> | null {
+function findSpatialTotal(ocrLines: ExtractOptions['ocrLines']): { cents: number; lineIndexes: number[] } | null {
+  if (!ocrLines?.length) return null;
+  let best: { cents: number; lineIndexes: number[]; rank: number; top: number } | null = null;
+  for (const [labelIndex, label] of ocrLines.entries()) {
+    const text = label.text?.trim() ?? '';
+    if (!text || /\b(?:sub[\s-]?total|exclud(?:ing|es?)\s+(?:tax|gst)|savings?|discounts?|items?|qty|quantity)\b/i.test(text)) continue;
+    if (/\b(?:includes?|incl)\s+gst\s+of\b/i.test(text) && !amountsIn(text).length) continue;
+    const inclusive = /\b(?:total|ota[1l])\b.*\b(?:incl(?:uding|udes?)?|includes?)\s*(?:tax|gst)\b/i.test(text);
+    const rank = inclusive || /\bamount\s+due\b/i.test(text) ? 3 : 0;
+    if (!rank || label.left === undefined || label.right === undefined ||
+      ![label.left, label.right, label.top, label.bottom].every(Number.isFinite) ||
+      label.left >= label.right || label.top >= label.bottom) continue;
+    for (const [amountIndex, amount] of ocrLines.entries()) {
+      if (amountIndex === labelIndex || amount.left === undefined || amount.right === undefined ||
+        ![amount.left, amount.right, amount.top, amount.bottom].every(Number.isFinite) ||
+        amount.left < label.right || amount.left >= amount.right || amount.top >= amount.bottom) continue;
+      const overlap = Math.min(label.bottom, amount.bottom) - Math.max(label.top, amount.top);
+      if (overlap <= 0) continue;
+      const cents = amountsIn(amount.text ?? '').at(-1);
+      if (cents === undefined) continue;
+      if (!best || rank > best.rank || rank === best.rank &&
+        (label.top > best.top || label.top === best.top && cents > best.cents)) {
+        best = { cents, lineIndexes: [labelIndex, amountIndex], rank, top: label.top };
+      }
+    }
+  }
+  return best;
+}
+
+function extractTotal(lines: string[], ocrLines?: ExtractOptions['ocrLines']): Extracted<number> | null {
+  const spatial = findSpatialTotal(ocrLines);
+  if (spatial) return { value: spatial.cents, confidence: 'medium' };
   let best: { rank: number; cents: number } | null = null;
   for (const line of lines) {
     if (NOT_TOTAL_RE.test(line)) continue;
