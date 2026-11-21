@@ -155,10 +155,10 @@ h3 { font-size: 1.4rem; margin: .35rem 0 .7rem; }
   .footer-inner { padding-block: 32px; align-items: start; flex-direction: column; gap: 15px; }
   .docs-main { padding-top: 65px; }
   .docs-intro { padding-bottom: 55px; }
-  .docs-grid { grid-template-columns: 1fr; padding-top: 40px; }
-  .docs-nav { position: static; display: flex; overflow-x: auto; gap: 18px; padding-bottom: 25px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .docs-grid { grid-template-columns: minmax(0, 1fr); padding-top: 40px; }
+  .docs-nav { position: static; display: flex; min-width: 0; overflow-x: auto; gap: 18px; padding-bottom: 25px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   .docs-nav span { display: none; }
-  .docs-content { padding-top: 35px; }
+  .docs-content { min-width: 0; padding-top: 35px; }
   .docs-content section { margin-bottom: 50px; padding-bottom: 50px; }
 }
 @media (max-width: 420px) {
