@@ -1,6 +1,10 @@
 node_modules/
 dist/
 apps/mobile/android/
+apps/mobile/modules/*/android/build/
+.tmp/
+.idea/
+.expo/
 
 # Claude Code
 CLAUDE.md
