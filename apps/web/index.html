@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f7f9f8">
+  <meta name="theme-color" content="#faf8ff">
   <meta name="site-kind" content="software">
   <meta name="page-type" content="software">
   <meta name="description" content="Remi scans receipts on Android, lets you confirm each amount, then exports one expense claim as PDF and CSV.">
@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=4">
+  <link rel="stylesheet" href="./styles.css?v=5">
   <link rel="stylesheet" href="./assets/motion/motion.css">
   <script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
   <script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
@@ -26,7 +26,7 @@
   <link rel="modulepreload" href="./assets/moments/word-highlight/moment.js">
 </head>
 <body>
-  <!-- software; centred hero, teal-on-paper, Host Grotesk, nav-centre, footer-statement, close-word, space, arrow, wordmark; word-highlight at privacy -->
+  <!-- software; centred hero, purple-on-paper, Host Grotesk, nav-centre, footer-statement, close-word, space, arrow, wordmark; word-highlight at privacy -->
   <header class="site-header nav"><div class="wrap header-inner">
     <a class="skip-link" href="#top">Skip to content</a>
     <a class="brand" href="#top" aria-label="Remi home">remi<span>.</span></a>
@@ -67,7 +67,7 @@
       <div class="review-window" role="img" aria-label="Remi receipt review interface with a suggested amount awaiting confirmation"><div class="review-window-head"><span class="app-icon">R</span><strong>Receipt review</strong><span>2 of 2</span></div><div class="review-window-body"><div class="review-image" aria-hidden="true"><div class="receipt-paper"><b>CAFÉ NORTH</b><i></i><i></i><i></i><i></i><strong>TOTAL &nbsp; $18.40</strong></div></div><div class="review-fields"><div class="review-state"><span></span> Needs confirmation</div><div class="field-row"><span>Merchant</span><strong>Café North</strong></div><div class="field-row"><span>Date</span><strong>18 Nov 2026</strong></div><div class="field-row focus"><span>Suggested total</span><strong>$18.40</strong></div><div class="confirm-control">✓ &nbsp; Confirm receipt</div></div></div></div>
     </div></section>
     <section class="section export-section" id="export" aria-labelledby="export-title"><div class="wrap export-layout">
-      <div class="export-copy"><p class="kicker">Ready to send</p><h2 id="export-title">A PDF your team can check.</h2><p>The cover sheet lists every included receipt and the verified total. Receipt images follow in a compact A4 layout, with a CSV beside the PDF.</p><a class="inline-link" href="./developers.html#architecture">Read about the export core <span aria-hidden="true">↗</span></a></div>
+      <div class="export-copy"><p class="kicker">Ready to send</p><h2 id="export-title">A PDF your team can check.</h2><p>The cover sheet lists each receipt and the verified total. Images follow on A4 pages. Remi exports a matching CSV.</p><a class="inline-link" href="./developers.html#architecture">Read about the export core <span aria-hidden="true">↗</span></a></div>
       <div class="export-art" role="img" aria-label="PDF cover sheet, receipt page, and CSV rows from the same claim"><div class="pdf-page pdf-cover"><span>REMI / CLAIM</span><div class="pdf-title">November claims</div><div class="pdf-line"><span>Café North</span><strong>$18.40</strong></div><div class="pdf-line"><span>Supplies</span><strong>$42.90</strong></div><div class="pdf-total"><span>Total</span><strong>$61.30</strong></div></div><div class="pdf-page pdf-receipts"><div class="pdf-receipt"></div><div class="pdf-receipt short"></div></div><div class="csv-card"><span>claim.csv</span><code>merchant,total<br>Café North,18.40<br>Supplies,42.90</code></div></div>
     </div></section>
     <section class="section statement-section" id="privacy" data-moment="word-highlight" aria-labelledby="privacy-title"><div class="wrap"><h2 id="privacy-title">Receipt files stay on your phone.</h2><p class="mo-wh__text">Drafts, receipt images, and PDF versions remain <strong>on your device</strong>. Remi does not require an account or cross-device sync.</p></div></section>
